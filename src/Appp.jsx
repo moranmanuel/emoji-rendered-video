@@ -5,6 +5,8 @@ export default function App() {
     const videoRef = useRef(null)
     const canvasRef = useRef(null)
     const canvas2Ref = useRef(null)
+    const canvas3Ref = useRef(null)
+    const [emojiGrid, setEmojiGrid] = useState()
     
     useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true })
@@ -27,9 +29,9 @@ export default function App() {
                 canvas.height = video.videoHeight
                 canvas2.height = video.videoHeight
                 
-                const [emojiGrid, setEmojiGrid] = useState([])
 
-                const pixelsData = []
+                const emojisGrid = []
+                let emojisLine = []
                 
                 ctx.drawImage(video, 0, 0)
                 
@@ -44,10 +46,16 @@ export default function App() {
 
                     const closestEmoji = getClosestEmoji(r, g, b)
                     
-                    const newPixel = { x: (i / 4 - 1) % canvas.width, y: Math.floor(i / 4 / canvas.width), emoji: closestEmoji }
+                    // const newPixel = { x: (i / 4 - 1) % canvas.width, y: Math.floor(i / 4 / canvas.width), emoji: closestEmoji }
             
-                    pixelsData.push(newPixel)
+                    if(i / 4 <= canvas.width) emojisLine.push(closestEmoji)
+                    else {
+                        emojisGrid.push(emojisLine)
+                        emojisLine = []
+                    }
                 }
+
+                setEmojiGrid(emojisGrid)
             }
 
             requestAnimationFrame(draw)
@@ -55,24 +63,28 @@ export default function App() {
 
         draw()
 
-        const colors = [
-            { emoji: "⬛", r: 30,  g: 30,  b: 30  },
-            { emoji: "⬜", r: 240, g: 240, b: 240 },
-            // { emoji: "🟥", r: 196, g: 30,  b: 30  },
-            // { emoji: "🟧", r: 230, g: 126, b: 34  },
-            // { emoji: "🟨", r: 241, g: 196, b: 15  },
-            // { emoji: "🟩", r: 39,  g: 174, b: 96  },
-            // { emoji: "🟦", r: 41,  g: 128, b: 185 },
-            // { emoji: "🟫", r: 139, g: 90,  b: 43  },
-            // { emoji: "🟪", r: 142, g: 68,  b: 173 }
-        ]
+        // const colors = [
+        //     { emoji: "⬛", r: 30,  g: 30,  b: 30  },
+        //     { emoji: "⬜", r: 240, g: 240, b: 240 },
+        //     { emoji: "🟥", r: 196, g: 30,  b: 30  },
+        //     { emoji: "🟧", r: 230, g: 126, b: 34  },
+        //     { emoji: "🟨", r: 241, g: 196, b: 15  },
+        //     { emoji: "🟩", r: 39,  g: 174, b: 96  },
+        //     { emoji: "🟦", r: 41,  g: 128, b: 185 },
+        //     { emoji: "🟫", r: 139, g: 90,  b: 43  },
+        //     { emoji: "🟪", r: 142, g: 68,  b: 173 }
+        // ]
 
-        function getClosestEmoji(r, g,b ) {
+        const emojis = ["🥕", "🔔", "🌿", "🍊", "💛", "🖤", "🤍", "❤️", "💜", "🧡", "🌸", "🍋", "🌊", "🌙", "⭐"]
+
+        function getClosestEmoji(pixelR, pixelG, pixelB) {
             let closestEmoji = null
             let closestDistance = Infinity
 
-            for(const color of colors) {
-                const distance = (r - color.r) ** 2 + (g - color.g) ** 2 + (b - color.b) ** 2
+            for(const emoji of emojis) {
+                const {emojiR, emojiG, emojiB} = getEmojiRGB(emoji)
+ 
+                const distance = (pixelR - emojiR) ** 2 + (pixelG - emojiG) ** 2 + (pixelB - emojiB) ** 2
                 
                 if(distance < closestDistance){
                     closestEmoji = color
@@ -81,6 +93,20 @@ export default function App() {
             }
 
             return closestEmoji
+        }
+
+        function getEmojiRGB(emoji) {
+            const canvas3 = canvas3Ref.current
+            const ctx3 = canvas3.getContext("2d")
+
+            ctx3.fillText(emoji, 0, 0)
+            const canvasData = ctx3.getImageData(0, 0, 1, 0)
+
+            return {
+                emojiR: canvasData.data[0],
+                emojiG: canvasData.data[1],
+                emojiB: canvasData.data[2]
+            }
         }
 
     }, [])
