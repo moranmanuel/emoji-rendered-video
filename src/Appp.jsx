@@ -5,7 +5,8 @@ export default function App() {
     const videoRef = useRef(null)
     const canvasRef = useRef(null)
     const canvas2Ref = useRef(null)
-    const canvas3Ref = useRef(null)
+    const emojisData = [{emoji:"🥕"}, {emoji:"🔔"}, {emoji:"🌿"}, {emoji:"🍊"}, {emoji:"💛"}, {emoji:"🖤"}, {emoji:"🤍"}, {emoji:"❤️"}, {emoji:"💜"}, {emoji:"🧡"}, {emoji:"🌸"}, {emoji:"🍋"}, {emoji:"🌊"}, {emoji:"🌙"}, {emoji:"⭐"}]
+
     const [emojiGrid, setEmojiGrid] = useState()
     
     useEffect(() => {
@@ -16,19 +17,49 @@ export default function App() {
     }, [])
 
     useEffect(() => {
+        for(const emojiData of emojisData) {
+            const canvas2 = canvas2Ref.current
+            const ctx2 = canvas2.getContext("2d")
+            canvas2.width = 32
+            canvas2.height = 32
+
+            ctx2.clearRect(0, 0, canvas2.width, canvas2.height)
+            ctx2.fillText(emojiData.emoji, 0, 0)
+            const canvasData = ctx2.getImageData(0, 0, 32, 32)
+            const emojiRGBA = canvasData.data
+            let rTotal = 0
+            let gTotal = 0
+            let bTotal = 0
+            let numberOfPixels = 0
+
+            for (let i = 0; i < emojiRGBA.length; i+=4) {
+                const alpha = emojiRGBA[i+3] > 0
+                
+                if (alpha > 0) {
+                    rTotal += emojiRGBA[i]
+                    gTotal += emojiRGBA[i+1]
+                    bTotal += emojiRGBA[i+2]
+                    numberOfPixels++
+                }
+            }
+
+            emojiData.r = rTotal / numberOfPixels
+            emojiData.g = gTotal / numberOfPixels
+            emojiData.b = bTotal / numberOfPixels
+        }
+    }, [])
+
+    useEffect(() => {
         const video = videoRef.current
         const canvas = canvasRef.current
-        const canvas2 = canvas2Ref.current
         const ctx = canvas.getContext("2d", { willReadFrequently: true })
-        const ctx2 = canvas2.getContext("2d")
+
+        let emojiGridShown = false
         
         function draw() {
             if(video.readyState === video.HAVE_ENOUGH_DATA) {
                 canvas.width = video.videoWidth
-                canvas2.width = video.videoWidth
                 canvas.height = video.videoHeight
-                canvas2.height = video.videoHeight
-                
 
                 const emojisGrid = []
                 let emojisLine = []
@@ -44,11 +75,9 @@ export default function App() {
                     const g = pixelsRGBA[i+1]
                     const b = pixelsRGBA[i+2]
 
-                    const closestEmoji = getClosestEmoji(r, g, b)
-                    
-                    // const newPixel = { x: (i / 4 - 1) % canvas.width, y: Math.floor(i / 4 / canvas.width), emoji: closestEmoji }
-            
-                    if(i / 4 <= canvas.width) emojisLine.push(closestEmoji)
+                    const closestEmoji = getClosestEmoji(r, g, b)                    
+
+                    if(i / 4 <= canvas.width - 1) emojisLine.push(closestEmoji)
                     else {
                         emojisGrid.push(emojisLine)
                         emojisLine = []
@@ -56,6 +85,12 @@ export default function App() {
                 }
 
                 setEmojiGrid(emojisGrid)
+
+                if(!emojiGridShown) {
+                    console.log(emojisGrid[0])
+                    emojiGridShown = true
+                }
+                
             }
 
             requestAnimationFrame(draw)
@@ -75,50 +110,33 @@ export default function App() {
         //     { emoji: "🟪", r: 142, g: 68,  b: 173 }
         // ]
 
-        const emojis = ["🥕", "🔔", "🌿", "🍊", "💛", "🖤", "🤍", "❤️", "💜", "🧡", "🌸", "🍋", "🌊", "🌙", "⭐"]
-
         function getClosestEmoji(pixelR, pixelG, pixelB) {
             let closestEmoji = null
             let closestDistance = Infinity
 
-            for(const emoji of emojis) {
-                const {emojiR, emojiG, emojiB} = getEmojiRGB(emoji)
- 
-                const distance = (pixelR - emojiR) ** 2 + (pixelG - emojiG) ** 2 + (pixelB - emojiB) ** 2
+            for(const emojiData of emojisData) { 
+                const distance = (pixelR - emojiData.r) ** 2 + (pixelG - emojiData.g) ** 2 + (pixelB - emojiData.b) ** 2
                 
-                if(distance < closestDistance){
-                    closestEmoji = color
+                if(distance < closestDistance) {
+                    closestEmoji = emojiData.emoji
                     closestDistance = distance
                 }
             }
 
             return closestEmoji
         }
-
-        function getEmojiRGB(emoji) {
-            const canvas3 = canvas3Ref.current
-            const ctx3 = canvas3.getContext("2d")
-
-            ctx3.fillText(emoji, 0, 0)
-            const canvasData = ctx3.getImageData(0, 0, 1, 0)
-
-            return {
-                emojiR: canvasData.data[0],
-                emojiG: canvasData.data[1],
-                emojiB: canvasData.data[2]
-            }
-        }
-
     }, [])
 
     return (
         <div className="container">
             <div className="rendered-video">
-                <canvas ref={canvas2Ref} />
+                {/* <video ref={videoRef} autoPlay /> */}
             </div>
             <div className="real-video">
                 <video ref={videoRef} autoPlay />
                 <canvas ref={canvasRef} style={{ display: "none" }} />
+                <canvas ref={canvas2Ref} style={{ display: "none" }}/>
+                {/* <canvas ref={canvas3Ref} style={{ display: "none" }} /> */}
             </div>
         </div>
     );
