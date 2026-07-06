@@ -1,40 +1,28 @@
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-  background: black;
-  height: 100vh;
-  overflow: hidden;
+    background: black ;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100%;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.emoji-canvas {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: black;
+.container > * {
+    height: 50vh;
+    display: flex;
+    justify-content: center;
 }
 
-.camera-feed {
-  height: 50vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: black;
-}
-
-.camera-feed video {
-  height: 100%;
-  width: 100%;
-  object-fit: contain; /* cambiá cover por contain */
+.container > * > * {
+    border-radius: 6px;
 }
