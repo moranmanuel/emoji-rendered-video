@@ -1,4 +1,4 @@
-import "./Appp.css"
+import "./App.css"
 import {useRef, useEffect, useState} from 'react'
 
 const emojisData: Array<{emoji:string, r?: number, g?: number, b?: number}> = [{emoji:"🥕"}, {emoji:"🔔"}, {emoji:"🍊"}, {emoji:"💛"}, {emoji:"🖤"}, {emoji:"🤍"}, {emoji:"❤️"}, {emoji:"💜"}, {emoji:"🧡"}, {emoji:"🌸"}, {emoji:"🍋"}, {emoji:"🌊"}, {emoji:"🌙"}, {emoji:"⭐"}]
