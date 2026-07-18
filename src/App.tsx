@@ -1,99 +1,10 @@
 import "./App.css"
 import { useRef, useEffect } from 'react'
+import data from 'emoji-datasource/emoji.json'
 
-const emojisData = [
-    // rojos
-    {emoji:"❤️", r:0, g:0, b:0},
-    {emoji:"🍎", r:0, g:0, b:0},
-    {emoji:"🌹", r:0, g:0, b:0},
-    {emoji:"🍓", r:0, g:0, b:0},
-    // naranjas
-    {emoji:"🥕", r:0, g:0, b:0},
-    {emoji:"🍊", r:0, g:0, b:0},
-    {emoji:"🧡", r:0, g:0, b:0},
-    {emoji:"🦊", r:0, g:0, b:0},
-    // amarillos
-    {emoji:"💛", r:0, g:0, b:0},
-    {emoji:"🌟", r:0, g:0, b:0},
-    {emoji:"🍋", r:0, g:0, b:0},
-    {emoji:"🌻", r:0, g:0, b:0},
-    // verdes
-    {emoji:"🌿", r:0, g:0, b:0},
-    {emoji:"🍀", r:0, g:0, b:0},
-    {emoji:"🥦", r:0, g:0, b:0},
-    {emoji:"🌵", r:0, g:0, b:0},
-    // azules
-    {emoji:"🌊", r:0, g:0, b:0},
-    {emoji:"💙", r:0, g:0, b:0},
-    {emoji:"🫐", r:0, g:0, b:0},
-    {emoji:"🧊", r:0, g:0, b:0},
-    // violetas
-    {emoji:"💜", r:0, g:0, b:0},
-    {emoji:"🍇", r:0, g:0, b:0},
-    {emoji:"🌸", r:0, g:0, b:0},
-    // marrones
-    {emoji:"🪵", r:0, g:0, b:0},
-    {emoji:"🍫", r:0, g:0, b:0},
-    {emoji:"🐻", r:0, g:0, b:0},
-    
-    // negros
-    {emoji:"🖤", r:0, g:0, b:0},
-    {emoji:"🎱", r:0, g:0, b:0},
-    {emoji:"🐈‍⬛", r:0, g:0, b:0},
-    // piel/marron claro
-    {emoji:"🔔", r:0, g:0, b:0},
-    {emoji:"🌾", r:0, g:0, b:0},
-    {emoji:"⭐", r:0, g:0, b:0},
-    {emoji:"👦", r:0, g:0, b:0},
+let emojisData: Array<{emoji: string, r: number, g: number, b: number}> = []
 
-    {emoji:"👧", r:0, g:0, b:0},
-    {emoji:"👨", r:0, g:0, b:0},
-    {emoji:"👩", r:0, g:0, b:0},
-    {emoji:"👴", r:0, g:0, b:0},
-    {emoji:"👵", r:0, g:0, b:0},
-    {emoji:"🧑", r:0, g:0, b:0},
-    {emoji:"👶", r:0, g:0, b:0},
-    {emoji:"🐻", r:0, g:0, b:0},
-    {emoji:"🦊", r:0, g:0, b:0},
-    {emoji:"🐯", r:0, g:0, b:0},
-    {emoji:"🦁", r:0, g:0, b:0},
-    {emoji:"🐮", r:0, g:0, b:0},
-    {emoji:"🐷", r:0, g:0, b:0},
-    {emoji:"🐸", r:0, g:0, b:0},
-    {emoji:"🐵", r:0, g:0, b:0},
-    {emoji:"🦝", r:0, g:0, b:0},
-    {emoji:"🍕", r:0, g:0, b:0},
-    {emoji:"🥩", r:0, g:0, b:0},
-    {emoji:"🍗", r:0, g:0, b:0},
-    {emoji:"🌽", r:0, g:0, b:0},
-    {emoji:"🥑", r:0, g:0, b:0},
-    {emoji:"🫐", r:0, g:0, b:0},
-    {emoji:"🍇", r:0, g:0, b:0},
-    {emoji:"🍉", r:0, g:0, b:0},
-    {emoji:"🥝", r:0, g:0, b:0},
-    {emoji:"🌲", r:0, g:0, b:0},
-    {emoji:"🌴", r:0, g:0, b:0},
-    {emoji:"🍁", r:0, g:0, b:0},
-    {emoji:"🌾", r:0, g:0, b:0},
-    {emoji:"🪨", r:0, g:0, b:0},
-    {emoji:"👑", r:0, g:0, b:0},
-    {emoji:"🏆", r:0, g:0, b:0},
-    {emoji:"🎸", r:0, g:0, b:0},
-    {emoji:"⚽", r:0, g:0, b:0},
-    {emoji:"🏀", r:0, g:0, b:0},
-    {emoji:"🎾", r:0, g:0, b:0},
-    {emoji:"🎱", r:0, g:0, b:0},
-    {emoji:"🌑", r:0, g:0, b:0},
-    {emoji:"🦇", r:0, g:0, b:0},
-    {emoji:"💎", r:0, g:0, b:0},
-    {emoji:"🌀", r:0, g:0, b:0},
-    {emoji:"🐍", r:0, g:0, b:0},
-    {emoji:"🦎", r:0, g:0, b:0},
-    {emoji:"🌱", r:0, g:0, b:0},
-    {emoji:"🥬", r:0, g:0, b:0}
-]
-
-const COLS = 160
+const COLS = 80
 
 export default function App() {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -110,40 +21,51 @@ export default function App() {
     }, [])
 
     useEffect(() => {
-        const emojiCanvas = emojiCanvasRef.current
-        if (!emojiCanvas) return
-        const emojiCanvasCtx = emojiCanvas.getContext("2d", { willReadFrequently: true });
-        if (!emojiCanvasCtx) return
-        emojiCanvas.width = 32
-        emojiCanvas.height = 32
-        
-        for(const emojiData of emojisData) {
-            emojiCanvasCtx.clearRect(0, 0, emojiCanvas.width, emojiCanvas.height)
-            emojiCanvasCtx.fillText(emojiData.emoji, 10, 20)
-            const canvasData = emojiCanvasCtx.getImageData(0, 0, 32, 32)
-            const emojiRGBA = canvasData.data
+        const cached = localStorage.getItem('emojisData')
+        if (cached) {
+            emojisData = JSON.parse(cached)
+        } else {
+            console.log("ENTRE")
+            const emojiCanvas = emojiCanvasRef.current
+            if (!emojiCanvas) return
+            const emojiCanvasCtx = emojiCanvas.getContext("2d", { willReadFrequently: true });
+            if (!emojiCanvasCtx) return
+            emojiCanvas.width = 32
+            emojiCanvas.height = 32
             
-            let rTotal = 0
-            let gTotal = 0
-            let bTotal = 0
-            let numberOfPixels = 0            
-
-            for (let i = 0; i < emojiRGBA.length; i+=4) {
-                const alpha = emojiRGBA[i+3]
+            for (const emoji of data) {
+                const emojiText = String.fromCodePoint(...emoji.unified.split('-').map((u: string) => parseInt(u, 16)))
+            
+                emojiCanvasCtx.clearRect(0, 0, emojiCanvas.width, emojiCanvas.height)
+                emojiCanvasCtx.fillText(emojiText, 10, 20)
+                const canvasData = emojiCanvasCtx.getImageData(0, 0, 32, 32)
+                const emojiRGBA = canvasData.data
                 
-                if (alpha > 0) {
-                    rTotal += emojiRGBA[i]
-                    gTotal += emojiRGBA[i+1]
-                    bTotal += emojiRGBA[i+2]
-                    numberOfPixels++
+                let rTotal = 0
+                let gTotal = 0
+                let bTotal = 0
+                let numberOfPixels = 0            
+
+                for (let i = 0; i < emojiRGBA.length; i+=4) {
+                    const alpha = emojiRGBA[i+3]
+                    
+                    if (alpha > 0) {
+                        rTotal += emojiRGBA[i]
+                        gTotal += emojiRGBA[i+1]
+                        bTotal += emojiRGBA[i+2]
+                        numberOfPixels++
+                    }
                 }
+
+                const r = rTotal / numberOfPixels
+                const g = gTotal / numberOfPixels
+                const b = bTotal / numberOfPixels
+
+                const emojiData = {emoji: emojiText, r: r, g: g, b: b}
+                emojisData.push(emojiData)
             }
 
-            emojiData.r = rTotal / numberOfPixels
-            emojiData.g = gTotal / numberOfPixels
-            emojiData.b = bTotal / numberOfPixels
-
-            console.log(emojiData);
+            localStorage.setItem('emojisData', JSON.stringify(emojisData))
         }
     }, [])
 
@@ -156,7 +78,6 @@ export default function App() {
         if (!renderedCanvas) return
         const renderedCanvasCtx = renderedCanvas.getContext("2d")
         
-        
         function draw() {
             if (!(video && videoCanvas && renderedCanvas && videoCanvasCtx && renderedCanvasCtx)) return
             
@@ -166,6 +87,9 @@ export default function App() {
                 renderedCanvas.width = video.videoWidth
                 renderedCanvas.height = video.videoHeight
 
+                const longSide = Math.max(videoCanvas.width, videoCanvas.height)
+                const BLOCK_SIZE = longSide / COLS
+                
                 const dividedByPixels = []
                 let dividedByPixelsLine = []
                 const blocks = []
@@ -187,23 +111,23 @@ export default function App() {
                     }
                 }
 
-                for (let i = 0; i < videoCanvas.height; i += videoCanvas.width/COLS) {
-                    for (let j = 0; j < videoCanvas.width; j += videoCanvas.width/COLS) {
+                for (let i = 0; i < videoCanvas.height; i += BLOCK_SIZE) {
+                    for (let j = 0; j < videoCanvas.width; j += BLOCK_SIZE) {
                         let rTotalBlock = 0
                         let gTotalBlock = 0
                         let bTotalBlock = 0
 
-                        for (let fila = 0; fila < videoCanvas.width/COLS; fila++) {
-                            for (let columna = 0; columna < videoCanvas.width/COLS; columna++) {
+                        for (let fila = 0; fila < BLOCK_SIZE; fila++) {
+                            for (let columna = 0; columna < BLOCK_SIZE; columna++) {
                                 rTotalBlock += dividedByPixels[i+fila][j+columna].r
                                 gTotalBlock += dividedByPixels[i+fila][j+columna].g
                                 bTotalBlock += dividedByPixels[i+fila][j+columna].b
                             }
                         }
 
-                        const r = rTotalBlock/((videoCanvas.width/COLS) ** 2)
-                        const g = gTotalBlock/((videoCanvas.width/COLS) ** 2)
-                        const b = bTotalBlock/((videoCanvas.width/COLS) ** 2)
+                        const r = rTotalBlock/((BLOCK_SIZE) ** 2)
+                        const g = gTotalBlock/((BLOCK_SIZE) ** 2)
+                        const b = bTotalBlock/((BLOCK_SIZE) ** 2)
 
                         const block: {x: number, y: number, r: number, g: number, b: number} = {x: j, y: i, r: r, g: g, b: b}
                         
