@@ -2,7 +2,7 @@
 
 A real-time webcam renderer that replaces every pixel block with the closest matching emoji based on color.
 
-<a href="https://your-url.com" target="_blank">Live Demo</a>
+<a href="https://emoji-rendered-video.vercel.app/" target="_blank">Live Demo</a>
 
 ## How it works
 
