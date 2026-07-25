@@ -13,7 +13,11 @@ export default function App() {
     const videoCanvasRef = useRef<HTMLCanvasElement>(null)
     const emojiCanvasRef = useRef<HTMLCanvasElement>(null)
     const renderedCanvasRef = useRef<HTMLCanvasElement>(null)
-    const [cols, setCols] = useState(20)
+    const [cols, setCols] = useState(160)
+    const [ready, setReady] = useState(false)
+    let scale = useRef(1)
+    let offsetX = useRef(0)
+    let offsetY = useRef(0)
 
     useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true })
@@ -99,6 +103,14 @@ export default function App() {
         if (!renderedCanvas) return
         const renderedCanvasCtx = renderedCanvas.getContext("2d")
         let animationId: number
+
+
+        const MIN_SCALE = 1
+        const MAX_SCALE = 5
+
+        let dragging = false
+        let lastX = 0
+        let lastY = 0
         
         let lastFrame = 0
         function draw(timestamp: number) {
@@ -107,10 +119,21 @@ export default function App() {
                 if (!(video && videoCanvas && renderedCanvas && videoCanvasCtx && renderedCanvasCtx)) return
                 
                 if(video.readyState === video.HAVE_ENOUGH_DATA) {
+                    setReady(true)
+
                     videoCanvas.width = video.videoWidth
                     videoCanvas.height = video.videoHeight
                     renderedCanvas.width = video.videoWidth
                     renderedCanvas.height = video.videoHeight
+
+                    renderedCanvasCtx.setTransform(
+                        scale.current,
+                        0,
+                        0,
+                        scale.current,
+                        offsetX.current,
+                        offsetY.current
+                    )
 
                     const longSide = Math.max(videoCanvas.width, videoCanvas.height)
                     const BLOCK_SIZE = Math.floor(longSide / cols)
@@ -149,6 +172,8 @@ export default function App() {
                             renderedCanvasCtx.fillText(closestEmoji, j, i)
                         }
                     }
+
+                    renderedCanvasCtx.setTransform(1,0,0,1,0,0)
                     
                     function getClosestEmoji(blockR: number, blockG: number, blockB: number): string {
                         let closestEmoji = null
@@ -179,11 +204,101 @@ export default function App() {
                 }
             }
             animationId = requestAnimationFrame(draw)
+            if(!renderedCanvasCtx) return
         }
 
+        const clampOffset = () => {
+            const maxOffsetX = renderedCanvas.width * (scale.current - 1)
+            const maxOffsetY = renderedCanvas.height * (scale.current - 1)
+
+            offsetX.current = Math.min(Math.max(offsetX.current, -maxOffsetX), 0)
+            offsetY.current = Math.min(Math.max(offsetY.current, -maxOffsetY), 0)
+        }
+
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault()
+
+            renderedCanvas.style.cursor = "zoom-in"
+            
+            const rect = renderedCanvas.getBoundingClientRect()
+
+            const mouseX = e.clientX - rect.left
+            const mouseY = e.clientY - rect.top
+
+            const zoom = e.deltaY < 0 ? 1.05 : 0.95
+
+            const previousScale = scale.current
+
+            const newScale = Math.min(
+                Math.max(scale.current * zoom, MIN_SCALE),
+                MAX_SCALE
+            )
+
+            if (newScale === previousScale) return
+
+            const worldX = (mouseX - offsetX.current) / scale.current
+            const worldY = (mouseY - offsetY.current) / scale.current
+
+            scale.current = newScale
+
+            offsetX.current = mouseX - worldX * scale.current
+            offsetY.current = mouseY - worldY * scale.current
+
+            clampOffset()
+
+            animationId = requestAnimationFrame(draw)
+
+            setTimeout(() => {
+                if (!dragging) {
+                    renderedCanvas.style.cursor = "grab"
+                }
+            }, 300)
+        }
+
+        const handleMouseDown = (e:MouseEvent) => {
+            dragging = true
+
+            lastX = e.clientX
+            lastY = e.clientY
+
+            renderedCanvas.style.cursor = "grabbing"
+        }
+
+        const handleMouseMove = (e:MouseEvent) => {
+            if (!dragging) return
+
+            offsetX.current += e.clientX - lastX
+            offsetY.current += e.clientY - lastY
+
+            lastX = e.clientX
+            lastY = e.clientY
+
+            clampOffset()
+
+            animationId = requestAnimationFrame(draw)
+        }
+
+        const handleMouseUp = () => {
+            dragging = false
+            renderedCanvas.style.cursor = "grab"
+        }
+
+        renderedCanvas.addEventListener("wheel", handleWheel, {passive: false})
+        renderedCanvas.addEventListener("mousedown", handleMouseDown)
+        renderedCanvas.addEventListener("mousemove", handleMouseMove)
+        document.addEventListener("mouseup", handleMouseUp)
+
+        renderedCanvas.style.cursor = "grab"
+        
         animationId = requestAnimationFrame(draw)
 
-        return () => cancelAnimationFrame(animationId)
+        return () => {
+            cancelAnimationFrame(animationId)
+            renderedCanvas.removeEventListener("wheel", handleWheel)
+            renderedCanvas.removeEventListener("mousedown", handleMouseDown)
+            renderedCanvas.removeEventListener("mousemove", handleMouseMove)
+            document.removeEventListener("mouseup", handleMouseUp)
+        }
     }, [cols])
 
     return (
@@ -198,19 +313,21 @@ export default function App() {
                     <canvas ref={videoCanvasRef} style={{ display: "none" }} />
                 </div>
             </div>
-            <div className="cols-options">
-                <p>Grids:</p>
-                <input 
-                    type="range" 
-                    list="cols-options" 
-                    value={cols}
-                    min={20}
-                    max={200}
-                    onChange={(e) => {setCols(Number(e.target.value))}}
-                    className="cols-options-slider"
-                />
-                <p>{cols}</p>
-            </div>
+            {ready &&
+                <div className="cols-options">
+                    <p>Grids:</p>
+                    <input
+                        type="range" 
+                        list="cols-options" 
+                        value={cols}
+                        min={20}
+                        max={200}
+                        onChange={(e) => {setCols(Number(e.target.value))}}
+                        className="cols-options-slider"
+                    />
+                    <p>{cols}</p>
+                </div>
+            }
         </div>
     );
 }
