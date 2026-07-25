@@ -56,6 +56,24 @@ body {
     width: 80px;
 }
 
+.cols-options-slider:focus {
+    outline: none;
+}
+
+input[type="number"] {
+    background: none;
+    border: none;
+    outline: none;
+    color: white;
+    width: 40px;
+    -moz-appearance: textfield; /* saca flechas en Firefox */
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
 @media (max-width: 810px) and (pointer: fine), (pointer: coarse) and (orientation: portrait) {    
     .container {
         gap: 0;

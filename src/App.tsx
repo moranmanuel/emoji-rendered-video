@@ -8,6 +8,9 @@ const emojiCache = new Map<string, string>();
 
 const CACHE_VERSION = "2"
 
+const MIN_COLS = 20
+const MAX_COLS = 200
+
 export default function App() {
     const videoRef = useRef<HTMLVideoElement>(null)
     const videoCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -15,6 +18,7 @@ export default function App() {
     const renderedCanvasRef = useRef<HTMLCanvasElement>(null)
     const [cols, setCols] = useState(160)
     const [ready, setReady] = useState(false)
+    const [colsInput, setColsInput] = useState(160)
     let scale = useRef(1)
     let offsetX = useRef(0)
     let offsetY = useRef(0)
@@ -29,7 +33,7 @@ export default function App() {
 
     useEffect(() => {
         emojiCache.clear()
-
+        localStorage.removeItem('emojisData')
         const savedVersion = localStorage.getItem("emojiCacheVersion")
 
         if (savedVersion !== CACHE_VERSION) {
@@ -319,13 +323,27 @@ export default function App() {
                     <input
                         type="range" 
                         list="cols-options" 
-                        value={cols}
+                        value={colsInput}
                         min={20}
                         max={200}
-                        onChange={(e) => {setCols(Number(e.target.value))}}
+                        onChange={(e) => {
+                            setCols(Number(e.target.value))
+                            setColsInput(Number(e.target.value))
+                        }}
                         className="cols-options-slider"
                     />
-                    <p>{cols}</p>
+                    <input
+                        type="number"
+                        placeholder=""
+                        value={colsInput === 0 ? '' : colsInput}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                setColsInput(Math.min(Math.max(colsInput, 20), 200))
+                                setCols(Math.min(Math.max(colsInput, 20), 200))
+                            }
+                        }}
+                        onChange={(e) => setColsInput(Number(e.target.value))}
+                    />
                 </div>
             }
         </div>
