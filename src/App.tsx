@@ -6,6 +6,8 @@ let emojisData: Array<{emoji: string, r: number, g: number, b: number}> = []
 
 const emojiCache = new Map<string, string>();
 
+const CACHE_VERSION = "2"
+
 export default function App() {
     const videoRef = useRef<HTMLVideoElement>(null)
     const videoCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -23,6 +25,14 @@ export default function App() {
 
     useEffect(() => {
         emojiCache.clear()
+
+        const savedVersion = localStorage.getItem("emojiCacheVersion")
+
+        if (savedVersion !== CACHE_VERSION) {
+            localStorage.removeItem("emojisData")
+            localStorage.setItem("emojiCacheVersion", CACHE_VERSION)
+        }
+
         const cached = localStorage.getItem('emojisData')
         
         if (cached) {
