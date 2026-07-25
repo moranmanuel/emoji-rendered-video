@@ -4,8 +4,6 @@ import data from 'emoji-datasource/emoji.json'
 
 let emojisData: Array<{emoji: string, r: number, g: number, b: number}> = []
 
-const COLS = 160
-
 const emojiCache = new Map<string, string>();
 
 export default function App() {
@@ -13,6 +11,7 @@ export default function App() {
     const videoCanvasRef = useRef<HTMLCanvasElement>(null)
     const emojiCanvasRef = useRef<HTMLCanvasElement>(null)
     const renderedCanvasRef = useRef<HTMLCanvasElement>(null)
+    const [cols, setCols] = useState(20)
 
     useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true })
@@ -24,7 +23,6 @@ export default function App() {
 
     useEffect(() => {
         emojiCache.clear()
-        localStorage.removeItem('emojisData')
         const cached = localStorage.getItem('emojisData')
         
         if (cached) {
@@ -34,8 +32,8 @@ export default function App() {
             if (!emojiCanvas) return
             const emojiCanvasCtx = emojiCanvas.getContext("2d", { willReadFrequently: true });
             if (!emojiCanvasCtx) return
-            emojiCanvas.width = 32
-            emojiCanvas.height = 32
+            emojiCanvas.width = 64
+            emojiCanvas.height = 64
 
             emojiCanvasCtx.font = "32px sans-serif";
             emojiCanvasCtx.textAlign = "center";
@@ -56,26 +54,27 @@ export default function App() {
 
                 for (let i = 0; i < emojiRGBA.length; i+=4) {
                     const alpha = emojiRGBA[i+3]
-                    
+                    const weight = alpha / 255
+
                     if (alpha > 0) {
-                        rTotal += emojiRGBA[i]
-                        gTotal += emojiRGBA[i+1]
-                        bTotal += emojiRGBA[i+2]
+                        rTotal += emojiRGBA[i] * weight
+                        gTotal += emojiRGBA[i+1] * weight
+                        bTotal += emojiRGBA[i+2] * weight
                         numberOfPixels++
                     }
                 }
-
-                if(numberOfPixels < 600) continue   
-
+                
+                if(numberOfPixels < 600) continue
+                
                 const r = rTotal / numberOfPixels
                 const g = gTotal / numberOfPixels
                 const b = bTotal / numberOfPixels
+        
+                if(r == 0 && g == 0 && b == 0) continue
 
                 const emojiData = {emoji: emojiText, r: r, g: g, b: b}
                 emojisData.push(emojiData)
             }
-
-            console.log(emojisData.length)
 
             localStorage.setItem('emojisData', JSON.stringify(emojisData))
         }
@@ -89,6 +88,7 @@ export default function App() {
         const renderedCanvas = renderedCanvasRef.current
         if (!renderedCanvas) return
         const renderedCanvasCtx = renderedCanvas.getContext("2d")
+        let animationId: number
         
         let lastFrame = 0
         function draw(timestamp: number) {
@@ -103,7 +103,7 @@ export default function App() {
                     renderedCanvas.height = video.videoHeight
 
                     const longSide = Math.max(videoCanvas.width, videoCanvas.height)
-                    const BLOCK_SIZE = longSide / COLS
+                    const BLOCK_SIZE = Math.floor(longSide / cols)
 
                     videoCanvasCtx.drawImage(video, 0, 0)
                     
@@ -111,12 +111,12 @@ export default function App() {
 
                     const pixelsRGBA = imageData.data
 
-                    renderedCanvasCtx.font = `${renderedCanvas.width/COLS}px serif`
+                    renderedCanvasCtx.font = `${BLOCK_SIZE*0.8}px serif`
                     renderedCanvasCtx.textBaseline = "top"
 
-                    for (let i = 0; i < videoCanvas.height; i += BLOCK_SIZE) {
+                    for (let i = 0; i + BLOCK_SIZE <= videoCanvas.height; i += BLOCK_SIZE) {
                         const row: string[] = []
-                        for (let j = 0; j < videoCanvas.width; j += BLOCK_SIZE) {
+                        for (let j = 0; j + BLOCK_SIZE <= videoCanvas.width; j += BLOCK_SIZE) {
                             let rTotalBlock = 0
                             let gTotalBlock = 0
                             let bTotalBlock = 0
@@ -143,11 +143,8 @@ export default function App() {
                     function getClosestEmoji(blockR: number, blockG: number, blockB: number): string {
                         let closestEmoji = null
                         let closestDistance = Infinity
-                        const qr = Math.round(blockR / 8);
-                        const qg = Math.round(blockG / 8);
-                        const qb = Math.round(blockB / 8);
 
-                        const key = `${qr},${qg},${qb}`;
+                        const key = `${blockR},${blockG},${blockB}`;
 
                         const cachedEmoji = emojiCache.get(key);
 
@@ -171,22 +168,38 @@ export default function App() {
                     }
                 }
             }
-            requestAnimationFrame(draw)
+            animationId = requestAnimationFrame(draw)
         }
 
-        draw(0)
-    }, [])
+        animationId = requestAnimationFrame(draw)
+
+        return () => cancelAnimationFrame(animationId)
+    }, [cols])
 
     return (
-        <div className="container">
-            <div className="rendered-video">
-                <canvas ref={renderedCanvasRef} />
-                {/* <canvas ref={emojiCanvasRef} /> */}
+        <div className = "container">
+            <div className="videos">
+                <div className="rendered-video">
+                    <canvas ref={renderedCanvasRef} />
+                </div>
+                <div className="real-video">
+                    <video ref={videoRef} autoPlay />
+                    <canvas ref={emojiCanvasRef} style={{ display: "none" }} />
+                    <canvas ref={videoCanvasRef} style={{ display: "none" }} />
+                </div>
             </div>
-            <div className="real-video">
-                <video ref={videoRef} autoPlay />
-                <canvas ref={emojiCanvasRef} style={{ display: "none" }} />
-                <canvas ref={videoCanvasRef} style={{ display: "none" }} />
+            <div className="cols-options">
+                <p>Grids:</p>
+                <input 
+                    type="range" 
+                    list="cols-options" 
+                    value={cols}
+                    min={20}
+                    max={200}
+                    onChange={(e) => {setCols(Number(e.target.value))}}
+                    className="cols-options-slider"
+                />
+                <p>{cols}</p>
             </div>
         </div>
     );
