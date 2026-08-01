@@ -1,6 +1,7 @@
 import "./App.css"
 import { useRef, useEffect, useState } from 'react'
 import data from 'emoji-datasource/emoji.json'
+import clsx from 'clsx';
 
 let emojisData: Array<{emoji: string, r: number, g: number, b: number}> = []
 
@@ -9,16 +10,22 @@ const emojiCache = new Map<string, string>();
 const CACHE_VERSION = "2"
 
 const MIN_COLS = 20
-const MAX_COLS = 200
+const MAX_COLS = 160
+
+const MIN_SCALE = 1
+const MAX_SCALE = 5
 
 export default function App() {
     const videoRef = useRef<HTMLVideoElement>(null)
     const videoCanvasRef = useRef<HTMLCanvasElement>(null)
     const emojiCanvasRef = useRef<HTMLCanvasElement>(null)
     const renderedCanvasRef = useRef<HTMLCanvasElement>(null)
-    const [cols, setCols] = useState(160)
+    
+    const [cols, setCols] = useState(MAX_COLS)
     const [ready, setReady] = useState(false)
-    const [colsInput, setColsInput] = useState(160)
+    const [colsInput, setColsInput] = useState(MAX_COLS)
+    const [showRealVideo, setShowRealVideo] = useState(true)
+
     let scale = useRef(1)
     let offsetX = useRef(0)
     let offsetY = useRef(0)
@@ -33,7 +40,6 @@ export default function App() {
 
     useEffect(() => {
         emojiCache.clear()
-        localStorage.removeItem('emojisData')
         const savedVersion = localStorage.getItem("emojiCacheVersion")
 
         if (savedVersion !== CACHE_VERSION) {
@@ -62,8 +68,7 @@ export default function App() {
             
                 emojiCanvasCtx.clearRect(0, 0, emojiCanvas.width, emojiCanvas.height)
                 emojiCanvasCtx.fillText(emojiText, 16, 16)
-                const canvasData = emojiCanvasCtx.getImageData(0, 0, emojiCanvas.width, emojiCanvas.height)
-                const emojiRGBA = canvasData.data
+                const emojiRGBA = emojiCanvasCtx.getImageData(0, 0, emojiCanvas.width, emojiCanvas.height).data
                 
                 let rTotal = 0
                 let gTotal = 0
@@ -101,25 +106,24 @@ export default function App() {
     useEffect(() => {
         const video = videoRef.current
         const videoCanvas = videoCanvasRef.current
-        if (!videoCanvas) return
-        const videoCanvasCtx = videoCanvas.getContext("2d", { willReadFrequently: true })
         const renderedCanvas = renderedCanvasRef.current
-        if (!renderedCanvas) return
+        if (!(videoCanvas && renderedCanvas)) return
+
+        const videoCanvasCtx = videoCanvas.getContext("2d", { willReadFrequently: true })
         const renderedCanvasCtx = renderedCanvas.getContext("2d")
+        
         let animationId: number
-
-
-        const MIN_SCALE = 1
-        const MAX_SCALE = 5
 
         let dragging = false
         let lastX = 0
         let lastY = 0
         
         let lastFrame = 0
+
         function draw(timestamp: number) {
             if (timestamp - lastFrame > 66) {
                 lastFrame = timestamp
+                
                 if (!(video && videoCanvas && renderedCanvas && videoCanvasCtx && renderedCanvasCtx)) return
                 
                 if(video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -144,9 +148,7 @@ export default function App() {
 
                     videoCanvasCtx.drawImage(video, 0, 0)
                     
-                    const imageData = videoCanvasCtx.getImageData(0, 0, videoCanvas.width, videoCanvas.height)
-
-                    const pixelsRGBA = imageData.data
+                    const pixelsRGBA = videoCanvasCtx.getImageData(0, 0, videoCanvas.width, videoCanvas.height).data
 
                     renderedCanvasCtx.font = `${BLOCK_SIZE*0.8}px serif`
                     renderedCanvasCtx.textBaseline = "top"
@@ -177,7 +179,7 @@ export default function App() {
                         }
                     }
 
-                    renderedCanvasCtx.setTransform(1,0,0,1,0,0)
+                    renderedCanvasCtx.setTransform(1, 0, 0, 1, 0, 0)
                     
                     function getClosestEmoji(blockR: number, blockG: number, blockB: number): string {
                         let closestEmoji = null
@@ -207,8 +209,8 @@ export default function App() {
                     }
                 }
             }
+
             animationId = requestAnimationFrame(draw)
-            if(!renderedCanvasCtx) return
         }
 
         const clampOffset = () => {
@@ -310,40 +312,79 @@ export default function App() {
             <div className="videos">
                 <div className="rendered-video">
                     <canvas ref={renderedCanvasRef} />
-                </div>
-                <div className="real-video">
-                    <video ref={videoRef} autoPlay />
                     <canvas ref={emojiCanvasRef} style={{ display: "none" }} />
                     <canvas ref={videoCanvasRef} style={{ display: "none" }} />
                 </div>
+                
+                <div 
+                    className="real-video"
+                    style={{ display: showRealVideo ? "flex" : "none" }}
+                >
+                    <video 
+                        ref={videoRef} 
+                        autoPlay
+                    />
+                </div>
             </div>
             {ready &&
-                <div className="cols-options">
-                    <p>Grids:</p>
-                    <input
-                        type="range" 
-                        list="cols-options" 
-                        value={colsInput}
-                        min={20}
-                        max={200}
-                        onChange={(e) => {
-                            setCols(Number(e.target.value))
-                            setColsInput(Number(e.target.value))
-                        }}
-                        className="cols-options-slider"
-                    />
-                    <input
-                        type="number"
-                        placeholder=""
-                        value={colsInput === 0 ? '' : colsInput}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                setColsInput(Math.min(Math.max(colsInput, 20), 200))
-                                setCols(Math.min(Math.max(colsInput, 20), 200))
-                            }
-                        }}
-                        onChange={(e) => setColsInput(Number(e.target.value))}
-                    />
+                <div className="controlPanel">
+                    <div className="colsOptions">
+                        <p>Columns:</p>
+                        <input
+                            type="range" 
+                            list="colsOptions" 
+                            value={colsInput}
+                            min={MIN_COLS}
+                            max={MAX_COLS}
+                            onChange={(e) => {
+                                const value = Number(e.target.value)
+                                setCols(value)
+                                setColsInput(value)
+                            }}
+                            className="colsOptionsSlider"
+                        />
+                        <input
+                            type="number"
+                            placeholder=""
+                            value={colsInput === 0 ? '' : colsInput}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    setColsInput(Math.max(colsInput, MIN_COLS))
+                                    setCols(Math.max(colsInput, MIN_COLS))
+                                }
+                            }}
+                            onBlur={() => {
+                                setColsInput(Math.max(colsInput, MIN_COLS))
+                                setCols(Math.max(colsInput, MIN_COLS))
+                            }}
+                            onChange={(e) => {
+                                if(Number(e.target.value) <= MAX_COLS) setColsInput(Number(e.target.value))
+                            }}
+                        />
+                    </div>
+                    <div className="videoSwitchContainer">
+                        <div className="videoSwitch">
+                            <label 
+                                onClick={() => setShowRealVideo(!showRealVideo)}
+                                className={clsx("bothVideos", {
+                                    "selected": showRealVideo,
+                                    "notSelected": !showRealVideo
+                                })}
+                            >
+                                <p>Comparison</p>
+                            </label>
+
+                            <label 
+                                onClick={() => setShowRealVideo(!showRealVideo)}
+                                className={clsx("onlyEmojiVideo", {
+                                    "selected": !showRealVideo,
+                                    "notSelected": showRealVideo
+                                })}
+                            >
+                                <p>Emoji only</p>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             }
         </div>

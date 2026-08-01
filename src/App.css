@@ -26,11 +26,12 @@ body {
     gap: 20px;
     width: 100%;
     padding: 0 20px;
+    justify-content: center;
 }
 
 .videos > * {
-    width: 50%;
-    height: 100%;
+    /* width: 100%; */
+    /* height: 100%; */
     object-fit: contain;
     display: flex;
     justify-content: center;
@@ -43,20 +44,26 @@ body {
     border-radius: 6px;
 }
 
-.cols-options {
+.controlPanel {
+    display: flex;
+    gap: 16px;
+}
+
+.colsOptions {
     display: flex;
     justify-content: center;
+    align-items: center;
     color: white;
     gap: 5px;
     font-size: 14px;
 }
 
-.cols-options-slider {
+.colsOptionsSlider {
     accent-color: white;
     width: 80px;
 }
 
-.cols-options-slider:focus {
+.colsOptionsSlider:focus {
     outline: none;
 }
 
@@ -65,13 +72,57 @@ input[type="number"] {
     border: none;
     outline: none;
     color: white;
-    width: 40px;
+    width: 24px;
     -moz-appearance: textfield; /* saca flechas en Firefox */
+    font-weight: bold;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
+}
+
+.videoSwitchContainer {
+    background-color: rgb(12, 12, 12);
+    border-radius: 96px;
+}
+
+.videoSwitch {
+    background-color: rgb(22, 22, 22);
+    border: 1px solid #121212;
+    border-radius: 9999px;
+    display: flex;
+    padding: 4px;
+}
+
+.videoSwitch label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    line-height: 150%;
+    padding: 0 10px 1px 10px;
+    height: 27px;
+    height: 24px;
+    border-radius: 9999px;
+}
+
+.bothVideos span {
+    font-size: 11px;
+    color: #FF6C02;
+}
+
+.selected {
+    background-color: #252525;
+    color: rgb(243, 243, 243);
+}
+
+.notSelected {
+    color: rgb(144, 144, 144);
+}
+
+.notSelected:hover {
+    color: #C0C0C0;
 }
 
 @media (max-width: 810px) and (pointer: fine), (pointer: coarse) and (orientation: portrait) {    
@@ -88,7 +139,6 @@ input[type="number"]::-webkit-inner-spin-button {
 
     .videos > * {
         width: 100%;
-        height: 50%;
         overflow: hidden;
     }
 
@@ -99,8 +149,11 @@ input[type="number"]::-webkit-inner-spin-button {
         height: auto;
     }
 
-    .cols-options {
+    .controlPanel {
         padding: 10px 0;
+    }
+
+    .colsOptions {
         font-size: 12px;
     }
 }
