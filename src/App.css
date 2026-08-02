@@ -107,11 +107,6 @@ input[type="number"]::-webkit-inner-spin-button {
     border-radius: 9999px;
 }
 
-.bothVideos span {
-    font-size: 11px;
-    color: #FF6C02;
-}
-
 .selected {
     background-color: #252525;
     color: rgb(243, 243, 243);
@@ -151,10 +146,23 @@ input[type="number"]::-webkit-inner-spin-button {
 
     .controlPanel {
         padding: 10px 0;
+        gap: 4px;
     }
 
     .colsOptions {
-        font-size: 12px;
+        font-size: 10px;
+    }
+
+    .colsOptionsSlider {
+        width: 60px;
+    }
+
+    input[type="number"] {
+        font-size: 10px;
+    }
+
+    .videoSwitch label {
+        font-size: 10px;
     }
 }
 

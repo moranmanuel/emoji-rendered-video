@@ -15,6 +15,8 @@ const MAX_COLS = 160
 const MIN_SCALE = 1
 const MAX_SCALE = 5
 
+let firstFrameDrawn = false
+
 export default function App() {
     const videoRef = useRef<HTMLVideoElement>(null)
     const videoCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -29,6 +31,8 @@ export default function App() {
     let scale = useRef(1)
     let offsetX = useRef(0)
     let offsetY = useRef(0)
+
+    let readyRef = useRef(false)
 
     useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true })
@@ -127,7 +131,6 @@ export default function App() {
                 if (!(video && videoCanvas && renderedCanvas && videoCanvasCtx && renderedCanvasCtx)) return
                 
                 if(video.readyState === video.HAVE_ENOUGH_DATA) {
-                    setReady(true)
 
                     videoCanvas.width = video.videoWidth
                     videoCanvas.height = video.videoHeight
@@ -177,6 +180,11 @@ export default function App() {
 
                             renderedCanvasCtx.fillText(closestEmoji, j, i)
                         }
+                    }
+
+                    if (!readyRef.current) {
+                        readyRef.current = true;
+                        setReady(true);
                     }
 
                     renderedCanvasCtx.setTransform(1, 0, 0, 1, 0, 0)
@@ -309,7 +317,10 @@ export default function App() {
 
     return (
         <div className = "container">
-            <div className="videos">
+            <div 
+                className="videos"
+                style={{ opacity: ready ? 1 : 0 }}
+            >
                 <div className="rendered-video">
                     <canvas ref={renderedCanvasRef} />
                     <canvas ref={emojiCanvasRef} style={{ display: "none" }} />
@@ -326,67 +337,68 @@ export default function App() {
                     />
                 </div>
             </div>
-            {ready &&
-                <div className="controlPanel">
-                    <div className="colsOptions">
-                        <p>Columns:</p>
-                        <input
-                            type="range" 
-                            list="colsOptions" 
-                            value={colsInput}
-                            min={MIN_COLS}
-                            max={MAX_COLS}
-                            onChange={(e) => {
-                                const value = Number(e.target.value)
-                                setCols(value)
-                                setColsInput(value)
-                            }}
-                            className="colsOptionsSlider"
-                        />
-                        <input
-                            type="number"
-                            placeholder=""
-                            value={colsInput === 0 ? '' : colsInput}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    setColsInput(Math.max(colsInput, MIN_COLS))
-                                    setCols(Math.max(colsInput, MIN_COLS))
-                                }
-                            }}
-                            onBlur={() => {
+            <div 
+                className="controlPanel"
+                style={{ opacity: ready ? 1 : 0 }}    
+            >
+                <div className="colsOptions">
+                    <p>Columns:</p>
+                    <input
+                        type="range" 
+                        list="colsOptions" 
+                        value={colsInput}
+                        min={MIN_COLS}
+                        max={MAX_COLS}
+                        onChange={(e) => {
+                            const value = Number(e.target.value)
+                            setCols(value)
+                            setColsInput(value)
+                        }}
+                        className="colsOptionsSlider"
+                    />
+                    <input
+                        type="number"
+                        placeholder=""
+                        value={colsInput === 0 ? '' : colsInput}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
                                 setColsInput(Math.max(colsInput, MIN_COLS))
                                 setCols(Math.max(colsInput, MIN_COLS))
-                            }}
-                            onChange={(e) => {
-                                if(Number(e.target.value) <= MAX_COLS) setColsInput(Number(e.target.value))
-                            }}
-                        />
-                    </div>
-                    <div className="videoSwitchContainer">
-                        <div className="videoSwitch">
-                            <label 
-                                onClick={() => setShowRealVideo(!showRealVideo)}
-                                className={clsx("bothVideos", {
-                                    "selected": showRealVideo,
-                                    "notSelected": !showRealVideo
-                                })}
-                            >
-                                <p>Comparison</p>
-                            </label>
+                            }
+                        }}
+                        onBlur={() => {
+                            setColsInput(Math.max(colsInput, MIN_COLS))
+                            setCols(Math.max(colsInput, MIN_COLS))
+                        }}
+                        onChange={(e) => {
+                            if(Number(e.target.value) <= MAX_COLS) setColsInput(Number(e.target.value))
+                        }}
+                    />
+                </div>
+                <div className="videoSwitchContainer">
+                    <div className="videoSwitch">
+                        <label 
+                            onClick={() => {if(!showRealVideo) setShowRealVideo(!showRealVideo)}}
+                            className={clsx("bothVideos", {
+                                "selected": showRealVideo,
+                                "notSelected": !showRealVideo
+                            })}
+                        >
+                            <p>Comparison</p>
+                        </label>
 
-                            <label 
-                                onClick={() => setShowRealVideo(!showRealVideo)}
-                                className={clsx("onlyEmojiVideo", {
-                                    "selected": !showRealVideo,
-                                    "notSelected": showRealVideo
-                                })}
-                            >
-                                <p>Emoji only</p>
-                            </label>
-                        </div>
+                        <label 
+                            onClick={() => {if(showRealVideo) setShowRealVideo(!showRealVideo)}}
+                            className={clsx("onlyEmojiVideo", {
+                                "selected": !showRealVideo,
+                                "notSelected": showRealVideo
+                            })}
+                        >
+                            <p>Emoji only</p>
+                        </label>
                     </div>
                 </div>
-            }
+            </div>
         </div>
     );
 }
